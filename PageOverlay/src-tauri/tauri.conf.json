@@ -1,0 +1,96 @@
+{
+    "build": {
+        "beforeDevCommand": "",
+        "beforeBuildCommand": "",
+        "devPath": "../src",
+        "distDir": "../src",
+        "withGlobalTauri": true
+    },
+    "package": {
+        "productName": "pageOverlay",
+        "version": "0.0.0"
+    },
+    "tauri": {
+        "cli": {
+            "args": [{
+                    "name": "app",
+                    "short": "a",
+                    "takesValue": true
+                }, {
+                    "name": "window",
+                    "short": "w",
+                    "takesValue": true
+                },
+                {
+                    "name": "video",
+                    "short": "v",
+                    "takesValue": true
+                }
+            ]
+        },
+        "allowlist": {
+            "all": false,
+            "path": {
+                "all": true
+            },
+            "shell": {
+                "all": false,
+                "open": true
+            },
+            "dialog": {
+                "all": true,
+                "ask": true,
+                "confirm": true,
+                "message": true,
+                "open": true,
+                "save": true
+            },
+            "window": {
+                "all": true,
+                "setFullscreen": true
+            },
+            "fs": {
+                "all": true,
+                "scope": ["**"]
+            },
+            "protocol": {
+                "asset": true,
+                "assetScope": ["**"]
+            },
+            "process": {
+                "all": true
+            }
+        },
+        "bundle": {
+            "active": true,
+            "targets": "all",
+            "identifier": "com.tauri.EasyPageOverlay",
+            "icon": [
+                "icons/32x32.png",
+                "icons/128x128.png",
+                "icons/128x128@2x.png",
+                "icons/icon.icns",
+                "icons/icon.ico"
+            ]
+        },
+        "security": {
+            "csp": null
+        },
+        "windows": [{
+            "fullscreen": false,
+            "resizable": false,
+            "title": "EasyRPG HTML Overlay",
+            "width": 1,
+            "height": 1,
+            "x": 0,
+            "y": 0,
+            "decorations": false,
+            "transparent": true,
+            "focus": false,
+            "alwaysOnTop": true,
+            "minimizable": false,
+            "skipTaskbar": true
+
+        }]
+    }
+}

@@ -1,0 +1,105 @@
+<style id="appStyle">
+    * {
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        image-rendering: pixelated;
+        pointer-events: none;
+    }
+    
+    body {
+        background: transparent;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    iframe {
+        width: 0;
+        height: 0;
+        overflow: hidden;
+        top: 0;
+        left: 0;
+        position: absolute;
+        border: 0;
+    }
+</style>
+
+<body>
+    <iframe id="content"></iframe>
+    <script>
+        const debugFlag = false;
+
+        document.addEventListener('keydown', (event) => {
+            if (!debugFlag) {
+                event.preventDefault();
+            }
+        });
+
+        function exitWithError(errorCode) {
+            console.error('Exiting with error code:', errorCode);
+            if (!debugFlag) {
+                __TAURI__.process.exit(errorCode);
+            }
+        }
+
+        function handleMessage(event) {
+            if (event.data.style && event.data.body) {
+                injectPage(event.data);
+            } else if (!debugFlag) {
+                exitWithError(1);
+            }
+        }
+
+        async function injectPage(data) {
+            const appStyle = document.getElementById('appStyle');
+            const iframe = document.getElementById('content');
+
+            appStyle.innerHTML = data.style;
+
+            await setInnerHTMLAsync(data.body);
+            evalScripts();
+        }
+
+        function evalScripts() {
+            const scriptElements = document.querySelectorAll('script:not(#PAGE_PRELOADER)');
+            let combinedScript = '';
+
+            for (const script of scriptElements) {
+                combinedScript += script.textContent;
+            }
+            combinedScript += 'initPage();';
+
+            const scriptElement = document.createElement('script');
+            scriptElement.textContent = combinedScript;
+            document.body.appendChild(scriptElement);
+        }
+        async function setInnerHTMLAsync(innerHtml) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(innerHtml, 'text/html');
+            document.body.innerHTML = doc.body.innerHTML;
+        }
+
+        function main() {
+            window.addEventListener('message', handleMessage);
+
+            initializeApp();
+        }
+        async function initializeApp() {
+            try {
+                const matches = await window.__TAURI__.cli.getMatches();
+                const url = window.__TAURI__.tauri.convertFileSrc(matches.args.app.value);
+                const iframe = document.getElementById('content');
+                iframe.src = url;
+            } catch (error) {
+                console.error('Failed to initialize app:', error);
+                if (!debugFlag) {
+                    exitWithError(error);
+                }
+            }
+        }
+
+        main();
+    </script>
+
+</body>

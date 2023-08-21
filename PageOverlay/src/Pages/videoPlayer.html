@@ -1,0 +1,202 @@
+<style id="appStyle">
+    * {
+        margin: 0;
+        padding: 0;
+        text-align: center;
+        image-rendering: pixelated;
+        pointer-events: none;
+    }
+    
+    body {
+        /* Transparent is closer to RPG_RT behavior, but I need to figure out to proper scale and fit the video container.*/
+        /* background: transparent; */
+        background: black;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+    }
+    
+    #countdown {
+        position: fixed;
+        top: 0;
+        right: 0;
+        background-color: rgba(0, 0, 0, 0.7);
+        padding: 20px;
+        font-size: .8em;
+        color: white;
+        font-family: Arial, sans-serif;
+        display: none;
+    }
+</style>
+
+<body>
+    <div id="countdown"></div>
+    <script id="loadMovie">
+        var tauriWindow = window.__TAURI__.window;
+        var video;
+        var input = {
+            window: null,
+            video: null
+        };
+
+        function SorN(value) {
+            const numValue = Number(value);
+            return isNaN(numValue) ? value : numValue;
+        }
+
+        async function initPage() {
+            video = document.createElement("video");
+            document.body.appendChild(video);
+
+            try {
+                const matches = await window.__TAURI__.cli.getMatches();
+                const windowArgs = matches.args.window.value.split(";").map(SorN);
+                const videoArgs = matches.args.video.value.split(";").map(SorN);
+
+                input.window = {
+                    w: windowArgs[0],
+                    h: windowArgs[1],
+                    x: windowArgs[2],
+                    y: windowArgs[3],
+                    fullscreen: !!windowArgs[4],
+                    stretch: !!windowArgs[5],
+                    zoom: windowArgs[6],
+                    resH: windowArgs[7],
+                    resW: windowArgs[8]
+                };
+
+                input.video = {
+                    src: window.__TAURI__.tauri.convertFileSrc(videoArgs[0]),
+                    w: videoArgs[1],
+                    h: videoArgs[2],
+                    x: videoArgs[3],
+                    y: videoArgs[4],
+                    filename: videoArgs[5]
+                };
+
+                await initVideo();
+            } catch (e) {
+                window.__TAURI__.process.exit(1);
+            }
+        }
+
+        async function initVideo() {
+            if (input.window.fullscreen) {
+                tauriWindow.appWindow.setFullscreen(true);
+            } else {
+                tauriWindow.appWindow.setPosition(new tauriWindow.LogicalPosition(input.window.x, input.window.y));
+                tauriWindow.appWindow.setSize(new tauriWindow.LogicalSize(input.window.w, input.window.h));
+            }
+
+            try {
+                video.src = input.video.src;
+                await video.play();
+
+                if (input.window.stretch) {
+                    video.style.height = "100vh";
+                    video.style.width = "100vw";
+                    video.style.objectFit = "fill";
+                } else {
+                    video.style.width = video.videoWidth < video.videoHeight ? "100vw" : "";
+                    video.style.height = video.videoHeight < video.videoWidth ? "100vh" : "";
+                }
+            } catch (e) {
+                window.__TAURI__.process.exit(e);
+            }
+
+            video.onerror = function(e) {
+                window.__TAURI__.process.exit(e);
+            };
+            video.onended = function() {
+                window.__TAURI__.process.exit(0);
+            };
+        }
+    </script>
+    <script id="keyboardFunctions">
+        const countdownElement = document.querySelector("#countdown");
+        const escapeKey = 'Escape';
+        const fKey = 'f';
+        const gKey = 'g';
+
+        let countdownInterval;
+        let countdownActive = false;
+        let countdownValue = 3;
+
+        function updateCountdown(count) {
+            if (count <= 0) {
+                stopCountdown();
+                __TAURI__.process.exit(0);
+                return;
+            }
+
+            countdownElement.textContent = countdownActive ? `Skipping Movie in ${count}...` : "";
+            return --count;
+        }
+
+        function startCountdown() {
+            countdownElement.style.display = "block";
+            countdownActive = true;
+            countdownValue = updateCountdown(countdownValue);
+
+            countdownInterval = setInterval(() => {
+                countdownValue = updateCountdown(countdownValue);
+            }, 1000);
+        }
+
+        function stopCountdown() {
+            clearInterval(countdownInterval);
+            countdownActive = false;
+            hideCountdown();
+        }
+
+        function setPlaybackRate(rate) {
+            countdownElement.style.display = rate > 1 ? "block" : "none";
+            countdownElement.textContent = rate > 1 ? ` > x${rate} ` : "";
+            video.playbackRate = rate;
+        }
+
+        function resetPlaybackRate() {
+            countdownElement.style.display = "none";
+            video.playbackRate = 1;
+        }
+
+        function handleKeyDown(event) {
+            if (event.key === escapeKey && !countdownActive) {
+                startCountdown();
+            } else if (event.key === fKey || event.key === gKey) {
+                if (video.playbackRate == 10) return setPlaybackRate(10);
+                setPlaybackRate(event.key === gKey ? 10 : 3);
+            }
+        }
+
+        function handleKeyUp(event) {
+            if (event.key === escapeKey) {
+                resetCountdown();
+            } else if (event.key === fKey || event.key === gKey) {
+                resetPlaybackRate();
+            }
+        }
+
+        // Attach event listeners to the document
+        document.addEventListener('keydown', handleKeyDown);
+        document.addEventListener('keyup', handleKeyUp);
+
+        function hideCountdown() {
+            countdownElement.style.display = "none";
+            countdownElement.textContent = "";
+        }
+
+        function resetCountdown() {
+            stopCountdown();
+        }
+    </script>
+
+</body>
+
+<script id="PAGE_PRELOADER">
+    var page = {
+        style: document.getElementById("appStyle").innerHTML,
+        body: document.body.innerHTML
+    }
+    window.top.postMessage(page, '*');
+</script>
