@@ -5,6 +5,7 @@
         text-align: center;
         image-rendering: pixelated;
         pointer-events: none;
+        zoom: reset;
     }
     
     body {
@@ -84,8 +85,8 @@
             if (input.window.fullscreen) {
                 tauriWindow.appWindow.setFullscreen(true);
             } else {
-                tauriWindow.appWindow.setPosition(new tauriWindow.LogicalPosition(input.window.x, input.window.y));
-                tauriWindow.appWindow.setSize(new tauriWindow.LogicalSize(input.window.w, input.window.h));
+                tauriWindow.appWindow.setPosition(new tauriWindow.PhysicalPosition(input.window.x, input.window.y));
+                tauriWindow.appWindow.setSize(new tauriWindow.PhysicalSize(input.window.w, input.window.h));
             }
 
             try {
